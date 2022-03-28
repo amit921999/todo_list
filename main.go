@@ -80,6 +80,27 @@ func fetchTodos(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func fetchById(w http.ResponseWriter, r *http.Request) {
+
+	id := strings.TrimSpace(chi.URLParam(r, "id"))
+
+	var todoData todo
+
+	err := db.C(colletionsName).Find(bson.M{"_id": bson.ObjectIdHex(id)}).One(&todoData)
+	if err != nil {
+		rnd.JSON(w, http.StatusProcessing, renderer.M{
+			"message": "The id is invalid",
+			"error":   err,
+		})
+		return
+	}
+
+	rnd.JSON(w, http.StatusOK, renderer.M{
+		"data": todoData,
+	})
+
+}
+
 func createTodo(w http.ResponseWriter, r *http.Request) {
 	var t todo
 
@@ -214,6 +235,7 @@ func todoHandlers() http.Handler {
 	rg := chi.NewRouter()
 	rg.Group(func(r chi.Router) {
 		r.Get("/", fetchTodos)
+		r.Get("/{id}", fetchById)
 		r.Post("/", createTodo)
 		r.Put("/{id}", updateTodo)
 		r.Delete("/{id}", deleteTodo)

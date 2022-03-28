@@ -40,6 +40,10 @@ type (
 		Completed bool      `json:"completed"`
 		CreatedAt time.Time `json:"createdAt"`
 	}
+	todoTitle struct {
+		Title     string `json:"title"`
+		Completed bool   `json:"completed"`
+	}
 )
 
 func init() {
@@ -99,6 +103,25 @@ func fetchById(w http.ResponseWriter, r *http.Request) {
 		"data": todoData,
 	})
 
+}
+
+func printTitleById(w http.ResponseWriter, r *http.Request) {
+	id := strings.TrimSpace(chi.URLParam(r, "id"))
+
+	var todoData todoTitle
+
+	err := db.C(colletionsName).Find(bson.M{"_id": bson.ObjectIdHex(id)}).One(&todoData)
+	if err != nil {
+		rnd.JSON(w, http.StatusProcessing, renderer.M{
+			"message": "The id is invalid",
+			"error":   err,
+		})
+		return
+	}
+
+	rnd.JSON(w, http.StatusOK, renderer.M{
+		"data": todoData,
+	})
 }
 
 func createTodo(w http.ResponseWriter, r *http.Request) {
@@ -236,6 +259,7 @@ func todoHandlers() http.Handler {
 	rg.Group(func(r chi.Router) {
 		r.Get("/", fetchTodos)
 		r.Get("/{id}", fetchById)
+		r.Get("/{id}/title", printTitleById)
 		r.Post("/", createTodo)
 		r.Put("/{id}", updateTodo)
 		r.Delete("/{id}", deleteTodo)
